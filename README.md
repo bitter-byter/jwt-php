@@ -1,32 +1,38 @@
 # JWT PHP
 
-> Note : Uses HS256 algorithm only.
+> Note : This package uses HS256 algorithm only.
 
-### Usage
+## Usage
 
 Requires a 256 bit secret key, needs to be generated manually.
 
 ```php
-$secret = 'R9YS96rZq0dD6m3NB72aeja6NqCph5y9';
+$secret = 'x31thQ9QO0mZb1dKq6uejr9g7YE1uMwf';
 ```
 
-#### Signing
+### Signing a token
 
 ```php
 $data = [
-    'email' => 'johndoe@example.com',
-    'password' => 'cDzHz0fI8z'
+    'name' => 'John Doe',
+    'exp' => '1655683200'
 ];
 
 $token = JWT::sign($data, $secret);
 ```
 
-#### Verifying
+> `exp` claim in the payload should be an epoch timestamp.
+
+### Verifying a token
 
 ```php
-$token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImpvaG5kb2VAZXhhbXBsZS5jb20iLCJwYXNzd29yZCI6ImNEekh6MGZJOHoifQ.s_3pSzPZBK_xk9ESqSoNctRv-20VvF8CjkHNWxCO-eQ';
-
-$result = JWT::verify($token, $secret);
+try {
+    $payload = JWT::verify($token, $secret);
+} catch (InvalidTokenException $e) {
+    // ...
+}
 ```
 
-> `verify` method returns `payload` if token is valid, else returns `'Invalid Token'`.
+> If the token is valid, payload of the token is returned.
+
+> `InvalidTokenException` is thrown if the token is invalid or expired.
