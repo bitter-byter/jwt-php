@@ -2,13 +2,19 @@
 
 namespace BitterByter\JWT;
 
+use BitterByter\JWT\Traits\ToolBox;
+use BitterByter\JWT\Exceptions\InvalidTokenException;
+use Carbon\Carbon;
+
 /**
- * JWT
+ * JWT.
  *
- * Algorithm : HS256
+ * Algorithm : HS256.
  */
 class JWT
 {
+    use ToolBox;
+
     /**
      * JWT Headers.
      */
@@ -34,8 +40,8 @@ class JWT
     {
         $data = self::dotUp(self::$headers, $payload);
 
-        // PR#1 - Remove padding ('=')
-        $data = str_replace("=", "", $data);
+        // Remove padding ('=') from data.
+        $data = str_replace('=', '', $data);
 
         $secret = base64_encode($secret);
 
@@ -50,7 +56,9 @@ class JWT
      * @param string $token The token to verify.
      * @param string $secret The 256 bit secret key.
      *
-     * @return array|string
+     * @return array
+     *
+     * @throws InvalidTokenException When the `$token` is invalid.
      */
     public static function verify(string $token, string $secret): array
     {
@@ -66,63 +74,17 @@ class JWT
 
         if ($isEqual) {
             $tokenPayload = self::decode($tokenPayload);
-    
-            if (time() > $tokenPayload->exp) {
-                // TODO#1 - InvalidTokenException must be thrown with the message "Token Expired"
-                return [];
+
+            // Validate `exp` claim.
+            if (isset($tokenPayload->exp)) {
+                if (Carbon::now()->timestamp > $tokenPayload->exp) {
+                    throw new InvalidTokenException('Token expired');
+                }
             }
 
             return $tokenPayload;
         }
-        
-        // TODO#1 - InvalidTokenException must be thrown with the message "Invalid Token"
-        return [];
-    }
 
-    /**
-     * Encodes $data to JSON and base64.
-     *
-     * @param array $data The data to encode.
-     *
-     * @return string
-     */
-    private static function encode(array $data): string
-    {
-        return base64_encode(json_encode($data));
-    }
-
-    /**
-     * Decodes $data from base64 and JSON.
-     *
-     * @param string $data The data to decode.
-     *
-     * @return mixed
-     */
-    private static function decode(string $data): array
-    {
-        return (array)json_decode(base64_decode($data));
-    }
-
-    /**
-     * Concatenates $values with a dot(.).
-     *
-     * @param array $values The values to concatenate.
-     *
-     * @return string
-     */
-    private static function dotUp(mixed ...$values): string
-    {
-        $encodedValues = [];
-
-        foreach ($values as $value) {
-            array_push(
-                $encodedValues,
-                is_array($value)
-                    ? self::encode($value)
-                    : $value
-            );
-        }
-
-        return implode('.', $encodedValues);
+        throw new InvalidTokenException;
     }
 }
